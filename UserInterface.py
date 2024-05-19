@@ -183,6 +183,7 @@ class UserInterface(QMainWindow):
         self.FormTable()
 
 
+
 class BuketWindow(QMainWindow):
 
     def __init__(self, parent : QWidget):
