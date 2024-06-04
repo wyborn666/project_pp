@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QApplication, QHBoxLayout, QTableWidget, QWidget, QT
     QVBoxLayout, QScrollArea, QAbstractItemView
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QPixmap, QFont
-from PyQt5 import uic
+from PyQt5 import uic, sip
 from PyQt5.QtCore import Qt
 import sqlite3
 from math import ceil
@@ -29,25 +29,55 @@ class UserInterface(QMainWindow):
         self.cur = self.connection.cursor()
 
         uic.loadUi(self.fileOpen_1,self)
+        self.category_comboBox.addItem("Все")
+        categories = sorted(self.cur.execute("""SELECT name FROM category"""))
+        for i in categories:
+            self.category_comboBox.addItem(i[0])
+
         self.LoadUI()
 
         self.bucket_pushButton.clicked.connect(self.clickedSelectBut)
         self.delete_pushButton.clicked.connect(self.clickedDeleteBut)
-        self.product_buttons.buttonClicked['QAbstractButton *'].connect(self.clickedBut)
+        self.filter_pushButton.clicked.connect(self.clickedFilterBut)
+        self.product_buttons.buttonClicked.connect(self.clickedBut)
 
 
     def LoadUI(self):
 
-        #$self.setFixedSize(1200, 800)
+        #self.setFixedSize(1200, 800)
+        category_text_from_box = self.category_comboBox.currentText()
+
 
         #Create dict for data from db and Supply paths for pictures
-        self.data_1 = self.cur.execute("""SELECT name, price, quantity FROM test""")
-        self.data = dict()
-        for row in self.data_1:
-            self.touple_to_dict(row, self.data)
+        #The product category is taken into account
+        if category_text_from_box == "Все":
+            self.data_1 = self.cur.execute("""SELECT name, price, quantity FROM test""")
+            self.data = dict()
+            for row in self.data_1:
+                self.touple_to_dict(row, self.data)
 
-        self.data_names = ["ProductImages//Banana.jpg", "ProductImages//Soup.jpg", 
-                           "ProductImages//Apple.jpg", "ProductImages//Garnet.jpg", "ProductImages//Broom.jpg"]
+            self.data_names_bdinfo = self.cur.execute("""SELECT pictures FROM test""")
+        
+        else:
+            current_category_for_filter = self.cur.execute(f"""SELECT id FROM category 
+                                                                    WHERE (name = '{category_text_from_box}')""")
+            for i in current_category_for_filter:
+                current_category_id_for_filter = i[0]
+
+            self.data_1 = self.cur.execute(f"""SELECT name, price, quantity FROM test
+                                                WHERE (id = '{current_category_id_for_filter}') """)
+            self.data = dict()
+            for row in self.data_1:
+                self.touple_to_dict(row, self.data)
+
+            self.data_names_bdinfo = self.cur.execute(f"""SELECT pictures FROM test
+                                                            WHERE (id = '{current_category_id_for_filter}')""")
+            
+        self.data_names = []
+        i = 0
+        for i, name in enumerate(self.data_names_bdinfo):
+            current_name = name[0]
+            self.data_names.append(f'ProductImages//{current_name}.jpg')
         
         self.table_headers = ["Name", "Price", "Amount", "Total Price"]
 
@@ -57,10 +87,9 @@ class UserInterface(QMainWindow):
 
         positions = [(i,j) for i in range(int(ceil(len(self.data.keys())/5))) for j in range(5)]   
         count = 0
-
         
         for position, name in zip(positions, self.data_names):
-            
+
             verBox = QVBoxLayout()
             label1 = QLabel()
             label1.setFixedHeight(150)
@@ -84,17 +113,17 @@ class UserInterface(QMainWindow):
             count += 1
 
         #Add layout on the scrollArea
-        frame = QFrame()
-        frame.setLayout(self.layout_scroll)
+        self.frame = QFrame()
+        self.frame.setLayout(self.layout_scroll)
 
-        self.scrollArea.setWidget(frame)
+        self.scrollArea.setWidget(self.frame)
         self.scrollArea.setWidgetResizable(False)
-
-        self.table.setColumnCount(3)
+        
+        self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels(self.table_headers)
 
         self.summary_label.setText(self.summary_label.text() + ":  0")
-
+        
 
     def FormTable(self):
 
@@ -125,7 +154,9 @@ class UserInterface(QMainWindow):
 
 
     def clickedBut(self, button_or):
-        
+        print(1)
+        print("Key was pressed, id is:", self.product_buttons.id(button_or))
+
         bill_connection = sqlite3.connect(self.bill_name)
         bill_cur = bill_connection.cursor()
 
@@ -138,8 +169,13 @@ class UserInterface(QMainWindow):
 
         #Cheking class compliance
         if isinstance(current_amount, int):
-            bill_cur.execute(f"""UPDATE Current_Bill SET Amount = '{current_amount + 1}' WHERE name = '{local_id}'""")
-            bill_connection.commit()
+            quantity = self.data[local_id][1]
+            if current_amount + 1 <= quantity:
+                bill_cur.execute(f"""UPDATE Current_Bill SET Amount = '{current_amount + 1}' WHERE name = '{local_id}'""")
+                bill_connection.commit()
+            
+            else:
+                mes = QMessageBox.information(self, "Предупреждение", "Достигнуто максимальное количесвто товара в корзине")
 
         else:
             bill_cur.execute(f"""INSERT INTO Current_Bill VALUES ('{local_id}', '{int(self.data[local_id][0])}', 
@@ -161,7 +197,21 @@ class UserInterface(QMainWindow):
     
 
     def clickedFilterBut(self):
-        pass
+
+
+        self.deleteLayout(self.frame.layout())
+        self.LoadUI()
+
+    def deleteLayout(self, layout):
+        if layout is not None:
+            while layout.count():
+                item = layout.takeAt(0)
+                widget = item.widget()
+                if widget is not None:
+                    widget.deleteLater()
+                else:
+                    self.deleteLayout(item.layout())
+            sip.delete(layout)
 
 
     def clickedDeleteBut(self):
@@ -190,28 +240,82 @@ class BuketWindow(QMainWindow):
         super().__init__()
         self.parent = parent
         self.bucket_window_name = "BucketWindow.ui"
+
+        self.bill_connection = sqlite3.connect(self.parent.bill_name)
+        self.bill_cur = self.bill_connection.cursor()
         uic.loadUi(self.bucket_window_name, self)
 
+
         self.load_text()
+        self.return_pushButton.clicked.connect(self.clickedReturnBut)
+        self.buy_pushButton.clicked.connect(self.clickedBuyBut)
+
 
     def load_text(self):
         
-        self.setFixedSize(600, 500)
+        self.setFixedSize(450, 450)
+
         bill_connection = sqlite3.connect(self.parent.bill_name)
         bill_cur = bill_connection.cursor()
 
-        ###  Refine
-        current_data = bill_cur.execute(f"""SELECT Name, Price, Amount, Total_Price FROM Current_Bill""")
-        for i in current_data:
-            self.bill_plainTextEdit.insertPlainText(f"{i[0]}")
-            self.bill_plainTextEdit.insertPlainText('  ' * (11- len(str(i[0]))) + f"{i[1]}")
-            self.bill_plainTextEdit.insertPlainText('  ' * (11- len(str(i[1]))) + f"{i[2]}")
-            self.bill_plainTextEdit.insertPlainText('  ' * (11- len(str(i[2]))) + f"{i[3]}")
+        current_data = self.bill_cur.execute(f"""SELECT Name, Price, Amount, Total_Price FROM Current_Bill""")
+        bill_dict = dict()
+        for row in current_data:
+            self.parent.touple_to_dict(row, bill_dict)
+
+        Sum = 0
+        for i, key in enumerate(bill_dict.keys()):
+            price_text = f'{str(bill_dict[key][0]):>5}'
+            amount_text = f'{str(bill_dict[key][1]):>5}'
+            good_bill_text = str(key) + ' ' + price_text + ' ' + amount_text
+            Sum += (bill_dict[key][0] * bill_dict[key][1])
+
+            s = f'Товар {i + 1}: {good_bill_text:>32}'
+            self.bill_plainTextEdit.insertPlainText(s)
             self.bill_plainTextEdit.insertPlainText("\n")
+        sum_string = str(Sum) + ' руб'
+        self.bill_plainTextEdit.insertPlainText(50 * ".")
+        self.bill_plainTextEdit.insertPlainText("\n")
+        self.bill_plainTextEdit.insertPlainText(f'Итого: {sum_string:>32}')
 
 
-    def But(self):
-        pass
+    def clickedReturnBut(self):
+
+        self.close()
+
+
+    def clickedBuyBut(self):
+
+        main_bd_con = sqlite3.connect(f"{self.parent.table_name}")
+        main_bd_cursor = main_bd_con.cursor()
+
+        end = end = QMessageBox.question(self, "Окно", "Покупка совершена. Хотите покинуть магазин?", QMessageBox.Yes | QMessageBox.No)
+        data_for_delete = self.bill_cur.execute(f"""SELECT Name, Amount FROM Current_Bill""")
+
+        if end == QMessageBox.Yes:
+            
+            for name, quantity in data_for_delete:
+                print(name, quantity)
+                main_bd_cursor.execute(f"""UPDATE test 
+                                            SET quantity = quantity - '{quantity}'
+                                            WHERE (name = '{name}')""")
+            
+            main_bd_con.commit()
+            self.bill_cur.execute("""DELETE FROM Current_Bill""")
+            self.bill_connection.commit()
+            sys.exit(app.exec_())
+
+        else:
+
+            for name, quantity in data_for_delete:
+                print(name, quantity)
+                main_bd_cursor.execute(f"""UPDATE test 
+                                            SET quantity = quantity - '{quantity}'
+                                            WHERE (name = '{name}')""")
+                
+            self.bill_cur.execute("""DELETE FROM Current_Bill""")
+            self.bill_connection.commit()
+            self.close()
 
 
 

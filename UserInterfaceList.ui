@@ -46,7 +46,7 @@
      <number>5</number>
     </property>
     <item row="0" column="0">
-     <widget class="QPushButton" name="select_pushButton">
+     <widget class="QPushButton" name="filter_pushButton">
       <property name="font">
        <font>
         <pointsize>10</pointsize>
