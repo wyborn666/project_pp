@@ -25,6 +25,43 @@ class UserInterface(QMainWindow):
         self.bill_name = "Current_Bill.bd"
         self.indicator = None
 
+        self.back_background = QLabel(self)
+        self.back_background.setGeometry(0, -85, 1300, 1100)
+        self.SetImage(self.back_background, 'background.jpg', 2000, 1150)
+        self.back_background.setStyleSheet("background-image: url(icons//backgound.jpg);")
+
+        x = -300
+
+        self.title = QLabel("Key Food Marketplace", self)
+        self.title.setGeometry(x, 0, 1500 - x, 70)
+        self.title.setAlignment(Qt.AlignCenter)
+
+        self.title.setAlignment(Qt.AlignCenter)
+        font = QFont("times new roman", 30, QFont.Bold)
+        self.title.setFont(font)
+
+        self.setFixedSize(1500, 800)
+
+        self.title.setStyleSheet("color: white; background-color: #0E294B;")
+
+        self.image_label_cart = QLabel(self)
+        self.image_label_cart.setGeometry(-30, -65, 200, 200)
+        self.SetImage(self.image_label_cart, 'icons//cart.png', 150, 150)
+
+        self.LoadUI()
+
+        self.bucket_pushButton.clicked.connect(self.clickedSelectBut)
+        self.delete_pushButton.clicked.connect(self.clickedDeleteBut)
+        self.filter_pushButton.clicked.connect(self.clickedFilterBut)
+        self.product_buttons.buttonClicked.connect(self.clickedBut)
+
+
+    def SetImage(self, label, path, width, height):
+        pixmap = QPixmap(path)
+        scaled_pixmap = pixmap.scaled(width, height, aspectRatioMode=Qt.KeepAspectRatio)
+        label.setPixmap(scaled_pixmap)
+        label.setStyleSheet("background-color: transparent;")
+
         self.connection = sqlite3.connect(self.table_name)
         self.cur = self.connection.cursor()
 
@@ -33,13 +70,6 @@ class UserInterface(QMainWindow):
         categories = sorted(self.cur.execute("""SELECT name FROM category"""))
         for i in categories:
             self.category_comboBox.addItem(i[0])
-
-        self.LoadUI()
-
-        self.bucket_pushButton.clicked.connect(self.clickedSelectBut)
-        self.delete_pushButton.clicked.connect(self.clickedDeleteBut)
-        self.filter_pushButton.clicked.connect(self.clickedFilterBut)
-        self.product_buttons.buttonClicked.connect(self.clickedBut)
 
 
     def LoadUI(self):
@@ -102,8 +132,17 @@ class UserInterface(QMainWindow):
             image_data = list(self.data.keys())[count]
 
             self.button = QPushButton(image_data)
+            self.button.setFont(QFont('times new roman', 15))
             self.button.setFlat(True)
             self.button.setFixedWidth(150)
+            self.button.setStyleSheet("""
+                           QPushButton {
+                               color: black;
+                           }
+                           QPushButton:hover {
+                               color: red;
+                           }
+                       """)
 
             self.product_buttons.addButton(self.button)
             self.product_buttons.setId(self.button, count)
@@ -114,6 +153,7 @@ class UserInterface(QMainWindow):
 
         #Add layout on the scrollArea
         self.frame = QFrame()
+        self.layout_scroll.setAlignment(Qt.AlignTop)
         self.frame.setLayout(self.layout_scroll)
 
         self.scrollArea.setWidget(self.frame)
@@ -198,9 +238,10 @@ class UserInterface(QMainWindow):
 
     def clickedFilterBut(self):
 
-
         self.deleteLayout(self.frame.layout())
         self.LoadUI()
+        self.product_buttons.buttonClicked.connect(self.clickedBut)
+
 
     def deleteLayout(self, layout):
         if layout is not None:
