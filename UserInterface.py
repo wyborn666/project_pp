@@ -1,7 +1,7 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QHBoxLayout, QTableWidget, QWidget, QTableWidgetItem, QMainWindow, QLineEdit, \
     QPushButton, QFileDialog, QComboBox, QPlainTextEdit, QMessageBox, QLabel, QFrame,  QGridLayout, QButtonGroup, \
-    QVBoxLayout, QScrollArea, QAbstractItemView
+    QVBoxLayout, QScrollArea, QAbstractItemView, QHeaderView
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QPixmap, QFont
 from PyQt5 import uic, sip
@@ -27,7 +27,7 @@ class UserInterface(QMainWindow):
 
         self.back_background = QLabel(self)
         self.back_background.setGeometry(0, -85, 1300, 1100)
-        self.SetImage(self.back_background, 'background.jpg', 2000, 1150)
+        self.SetImage(self.back_background, 'icons//background.jpg', 2000, 1150)
         self.back_background.setStyleSheet("background-image: url(icons//backgound.jpg);")
 
         x = -300
@@ -95,13 +95,13 @@ class UserInterface(QMainWindow):
                 current_category_id_for_filter = i[0]
 
             self.data_1 = self.cur.execute(f"""SELECT name, price, quantity FROM test
-                                                WHERE (id = '{current_category_id_for_filter}') """)
+                                                WHERE (category = '{current_category_id_for_filter}') """)
             self.data = dict()
             for row in self.data_1:
                 self.touple_to_dict(row, self.data)
 
             self.data_names_bdinfo = self.cur.execute(f"""SELECT pictures FROM test
-                                                            WHERE (id = '{current_category_id_for_filter}')""")
+                                                            WHERE (category = '{current_category_id_for_filter}')""")
             
         self.data_names = []
         i = 0
@@ -161,6 +161,7 @@ class UserInterface(QMainWindow):
         
         self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels(self.table_headers)
+        self.table.resizeColumnsToContents()
 
         self.summary_label.setText(self.summary_label.text() + ":  0")
         
@@ -190,12 +191,10 @@ class UserInterface(QMainWindow):
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table.show()
 
-        self.summary_label.setText(f"Итого:   {total_sum}")
+        self.summary_label.setText(f"Итого: {total_sum}")
 
 
     def clickedBut(self, button_or):
-        print(1)
-        print("Key was pressed, id is:", self.product_buttons.id(button_or))
 
         bill_connection = sqlite3.connect(self.bill_name)
         bill_cur = bill_connection.cursor()

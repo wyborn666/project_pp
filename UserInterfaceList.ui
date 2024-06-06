@@ -104,9 +104,9 @@ background-color: rgb(249, 255, 207);</string>
    <widget class="QLabel" name="summary_label">
     <property name="geometry">
      <rect>
-      <x>890</x>
+      <x>860</x>
       <y>790</y>
-      <width>71</width>
+      <width>151</width>
       <height>31</height>
      </rect>
     </property>
@@ -125,7 +125,7 @@ background-color: rgb(249, 255, 207);</string>
      </font>
     </property>
     <property name="text">
-     <string>Итого:</string>
+     <string>Итого</string>
     </property>
    </widget>
    <widget class="QPushButton" name="bucket_pushButton">
