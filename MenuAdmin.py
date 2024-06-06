@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QFra
 from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5 import uic
-from Project.Products import ProductClass
+from Products import ProductClass
 import sqlite3
 
 
@@ -31,7 +31,7 @@ class MyWidget(QMainWindow):
         self.setFixedSize(1500, 800)
 
         self.setStyleSheet("background-color: #ffffff;")
-        self.title.setStyleSheet("color: white; background-color: #000000;")
+        self.title.setStyleSheet("color: white; background-color: #0E294B;")
 
         self.image_label_cart = QLabel(self)
         self.image_label_cart.setGeometry(-30, -65, 200, 200)
@@ -41,13 +41,6 @@ class MyWidget(QMainWindow):
         self.image_label_emblem.setGeometry(0, 50, 225, 200)
         self.SetImage(self.image_label_emblem, 'icons//emblem_shop.png', 220, 300)
 
-        self.login_button = QPushButton("Login", self)
-        self.login_button.setGeometry(1340, 11, 200, 70)
-        self.login_button.resize(150, 50)
-        self.login_button.setStyleSheet("background-color: #7ef574;")
-        font = QFont("times new roman", 13, QFont.Bold)
-        self.login_button.setFont(font)
-
         Interface = QFrame(self)
         Interface.setFrameShape(QFrame.StyledPanel)
         Interface.setGeometry(0, 235, 225, 565)
@@ -56,7 +49,7 @@ class MyWidget(QMainWindow):
         self.title_menu = QLabel("Menu", Interface)
         self.title_menu.setGeometry(0, 0, 225, 90)
         self.title_menu.setAlignment(Qt.AlignCenter)
-        self.title_menu.setStyleSheet("background-color: #7ef574")
+        self.title_menu.setStyleSheet("background-color: #11e848")
         font = QFont("times new roman", 17, QFont.Bold)
         self.title_menu.setFont(font)
 
