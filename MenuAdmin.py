@@ -1,6 +1,6 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QFrame, QTableWidgetItem, QTableWidget
-from PyQt5.QtGui import QPixmap, QFont
+from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QFrame, QTableWidgetItem, QMessageBox
+from PyQt5.QtGui import QCloseEvent, QPixmap, QFont
 from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5 import uic
 from Products import ProductClass
@@ -8,6 +8,7 @@ import sqlite3
 
 
 class MyWidget(QMainWindow):
+
     def __init__(self, db_filename):
         super().__init__()
         self.fileOpen = ""
@@ -15,9 +16,14 @@ class MyWidget(QMainWindow):
         self.db_filename = db_filename
         self.LoadUI()
 
+
+    def closeEvent(self, event):
+        sys.exit()
+
+
     def LoadUI(self):
-        self.mas = ['айди', 'Название', 'Цена', 'Количество', 'Категория', 'Картинка']
-        self.goods = ['id', 'name', 'price', 'quantity', 'category', 'pictures']
+        self.mas = ['айди', 'Название', 'Цена', 'Количество', 'Категория', 'Картинка', 'Скидка']
+        self.goods = ['id', 'name', 'price', 'quantity', 'category', 'pictures', 'sale']
         self.loadTable(self.db_filename)
 
         x = -300
@@ -39,7 +45,7 @@ class MyWidget(QMainWindow):
 
         self.image_label_emblem = QLabel(self)
         self.image_label_emblem.setGeometry(0, 50, 225, 200)
-        self.SetImage(self.image_label_emblem, 'emblem_shop.png', 220, 300)
+        self.SetImage(self.image_label_emblem, 'icons//emblem_shop.png', 220, 300)
 
         Interface = QFrame(self)
         Interface.setFrameShape(QFrame.StyledPanel)
@@ -59,12 +65,6 @@ class MyWidget(QMainWindow):
         font = QFont("times new roman", 13, QFont.Bold)
         self.products_button.setFont(font)
 
-        self.stocks_button = QPushButton("Stocks", Interface)
-        self.stocks_button.setGeometry(-2, 144, 225, 50)
-        self.stocks_button.setStyleSheet("background-color: #DCDCDC")
-        font = QFont("times new roman", 13, QFont.Bold)
-        self.stocks_button.setFont(font)
-
         self.exit_button = QPushButton("Exit", Interface)
         self.exit_button.setGeometry(-2, 513, 225, 50)
         self.exit_button.setStyleSheet("background-color: #DCDCDC")
@@ -72,6 +72,8 @@ class MyWidget(QMainWindow):
         self.exit_button.setFont(font)
 
         self.products_button.clicked.connect(self.ProductsWindow)
+        self.exit_button.clicked.connect(self.confirm_exit)
+
 
     def SetImage(self, label, path, width, height):
         pixmap = QPixmap(path)
@@ -79,10 +81,11 @@ class MyWidget(QMainWindow):
         label.setPixmap(scaled_pixmap)
         label.setStyleSheet("background-color: transparent;")
 
+
     def loadTable(self, db_filename):
         self.connection = sqlite3.connect(db_filename)
         self.cursor = self.connection.cursor()
-        self.data = self.cursor.execute("SELECT id, name, price, quantity, category, pictures FROM test").fetchall()
+        self.data = self.cursor.execute("SELECT id, name, price, quantity, category, pictures, sale FROM test").fetchall()
 
         if self.data:
             self.table.setRowCount(len(self.data))
@@ -107,6 +110,7 @@ class MyWidget(QMainWindow):
 
         self.table.show()
 
+
     def ProductsWindow(self):
         try:
             db_filename = 'test.db'
@@ -121,14 +125,16 @@ class MyWidget(QMainWindow):
         self.loadTable(self.db_filename)
 
 
-class MyWindow(QMainWindow):
-    def closeEvent(self, event):
-        event.accept()
+    def confirm_exit(self):
+        reply = QMessageBox.question(self, 'Confirm Exit',
+                                     'Are you sure you want to exit?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            self.close()
 
 
-app = QApplication(sys.argv)
-ex = MyWidget('test.db')
-window = MyWindow()
-window.setCentralWidget(ex)
-window.show()
-sys.exit(app.exec_())
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    ex = MyWidget('test.db')
+    ex.show()
+    sys.exit(app.exec_())

@@ -1,12 +1,9 @@
-import sys
-from PyQt5.QtWidgets import QApplication, QHBoxLayout, QTableWidget, QWidget, QTableWidgetItem, QMainWindow, QLineEdit, \
-    QPushButton, QFileDialog, QComboBox, QPlainTextEdit, QMessageBox, QLabel, QFrame,  QGridLayout, QButtonGroup, \
-    QVBoxLayout, QScrollArea, QAbstractItemView, QHeaderView
+import sys, sqlite3
+from PyQt5.QtWidgets import QApplication, QHBoxLayout, QWidget, QTableWidgetItem, QMainWindow, QPushButton, QMessageBox, \
+    QLabel, QFrame,  QGridLayout, QButtonGroup, QVBoxLayout, QHBoxLayout, QAbstractItemView
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QCloseEvent, QColor, QPixmap, QFont
+from PyQt5.QtGui import QPixmap, QFont
 from PyQt5 import uic, sip
-from PyQt5.QtCore import Qt
-import sqlite3
 from math import ceil
 
 class UserInterfaceClass(QMainWindow):
@@ -128,7 +125,7 @@ class UserInterfaceClass(QMainWindow):
             current_name = name[0]
             self.data_names.append(f'ProductImages//{current_name}.jpg')
         
-        self.table_headers = ["Name", "Price", "Amount", "Total Price"]
+        self.table_headers = ["Название", "Цена", "Количество", "Итоговая цена"]
 
         #Layot for products
         self.layout_scroll = QGridLayout()
@@ -256,13 +253,22 @@ class UserInterfaceClass(QMainWindow):
 
     def clickedSelectBut(self):
         
-        if self.indicator is None:
-            self.indicator = BuketWindow(self)
-            self.indicator.show()
+        bill_conn = sqlite3.connect(self.bill_name)
+        bill_curs = bill_conn.cursor()
+
+        current_count_bill = bill_curs.execute("""SELECT count(*) FROM (select 1 from 'Current_Bill' limit 1)""").fetchall()[0][0]
+
+        if current_count_bill == 0:
+            message = QMessageBox.information(self, "Предупреждение", "Ваша корзина пуста")
 
         else:
-            self.indicator = None
-    
+            if self.indicator is None:
+                self.indicator = BuketWindow(self)
+                self.indicator.show()
+
+            else:
+                self.indicator = None
+        
 
     def clickedFilterBut(self):
 
@@ -338,20 +344,52 @@ class BuketWindow(QMainWindow):
         for row in current_data:
             self.parent.touple_to_dict(row, bill_dict)
 
+
+        self.bill_layout = QVBoxLayout()
+        font = QFont("times new roman", 12, QFont.Bold)
+
         Sum = 0
         for i, key in enumerate(bill_dict.keys()):
-            price_text = f'{str(bill_dict[key][0]):>5}'
-            amount_text = f'{str(bill_dict[key][1]):>5}'
-            good_bill_text = str(key) + ' ' + price_text + ' ' + amount_text
+            
+            label_for_one_good = QHBoxLayout()
+
+            label_good = QLabel(f'Товар{i+1}: ')
+            label_name = QLabel(f'{key:<14}')
+            label_price = QLabel(f'{str(bill_dict[key][0]):>5}')
+            label_amount = QLabel(f'{str(bill_dict[key][1]):>5}')
+
+            
+            label_good.setFont(font)
+            label_name.setFont(font)
+            label_price.setFont(font)
+            label_amount.setFont(font)
+            
+            label_for_one_good.addWidget(label_good)
+            label_for_one_good.addWidget(label_name)
+            label_for_one_good.addWidget(label_price)
+            label_for_one_good.addWidget(label_amount)
             Sum += (bill_dict[key][0] * bill_dict[key][1])
 
-            s = f'Товар {i + 1}: {good_bill_text:>32}'
-            self.bill_plainTextEdit.insertPlainText(s)
-            self.bill_plainTextEdit.insertPlainText("\n")
-        sum_string = str(Sum) + ' руб'
-        self.bill_plainTextEdit.insertPlainText(50 * ".")
-        self.bill_plainTextEdit.insertPlainText("\n")
-        self.bill_plainTextEdit.insertPlainText(f'Итого: {sum_string:>32}')
+
+            special_frame = QFrame()
+            self.bill_layout.setAlignment(Qt.AlignTop)
+            special_frame.setLayout(label_for_one_good)
+            self.bill_layout.addWidget(special_frame)
+
+        sum_string = str(Sum)
+
+        label_prom = QLabel(75*'.')
+        label_total_summ = QLabel(f'Итого: {sum_string:>55}')
+
+        label_prom.setFont(font)
+        label_total_summ.setFont(font)
+
+        self.bill_layout.addWidget(label_prom)
+        self.bill_layout.addWidget(label_total_summ)
+
+        total_frame = QFrame()
+        total_frame.setLayout(self.bill_layout)
+        self.scrollArea.setWidget(total_frame)
 
 
     def clickedReturnBut(self):
@@ -370,7 +408,6 @@ class BuketWindow(QMainWindow):
         if end == QMessageBox.Yes:
             
             for name, quantity in data_for_delete:
-                print(name, quantity)
                 main_bd_cursor.execute(f"""UPDATE test 
                                             SET quantity = quantity - '{quantity}'
                                             WHERE (name = '{name}')""")
@@ -394,24 +431,8 @@ class BuketWindow(QMainWindow):
 
 
 
-class MyWindow(QMainWindow):
-
-    def closeEvent(self, event):
-        event.accept()
-
-
-
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = UserInterfaceClass(None)
     ex.show()
     sys.exit(app.exec_())
-
-'''
-app = QApplication(sys.argv)
-ex = UserInterfaceClass()
-window = MyWindow()
-window.setCentralWidget(ex)
-window.show()
-sys.exit(app.exec_())
-'''

@@ -20,8 +20,8 @@ class ProductClass(QMainWindow):
         super().closeEvent(event)
 
     def LoadUI(self):
-        self.mas = ['айди', 'Название', 'Цена', 'Количество', 'Категория', 'Картинка']
-        self.goods = ['id', 'name', 'price', 'quantity', 'category', 'pictures']
+        self.mas = ['айди', 'Название', 'Цена', 'Количество', 'Категория', 'Картинка', 'Скидка']
+        self.goods = ['id', 'name', 'price', 'quantity', 'category', 'pictures', 'sale']
         self.setWindowTitle("Products")
 
         self.setFixedSize(1200, 800)
@@ -29,8 +29,8 @@ class ProductClass(QMainWindow):
 
         self.select_button.clicked.connect(self.filter_products_by_category)
         self.delete_button.clicked.connect(self.delete_products)
-        self.add_button.clicked.connect(self.insert_movies_by_first_class)
-        self.save_button.clicked.connect(self.save_movies)
+        self.add_button.clicked.connect(self.insert_products_by_first_class)
+        self.save_button.clicked.connect(self.save_products)
         self.table.cellChanged.connect(self.update_table)
 
     def filter_products_by_category(self):
@@ -55,8 +55,7 @@ class ProductClass(QMainWindow):
             if get_id:
                 filter_condition += f" AND category = {get_id[0]}"
 
-        query = f"SELECT id, name, price, quantity, category, pictures FROM test WHERE {filter_condition}"
-        print(f"Executing query: {query}")  # Отладочная информация
+        query = f"SELECT id, name, price, quantity, category, pictures, sale FROM test WHERE {filter_condition}"
         products = self.cursor.execute(query).fetchall()
 
         self.table.setRowCount(len(products))
@@ -97,7 +96,7 @@ class ProductClass(QMainWindow):
             self.connection.commit()
             self.loadTable(self.db_filename)
 
-    def save_movies(self):
+    def save_products(self):
         self.connection.commit()
 
     def update_table(self, row, column):
@@ -114,14 +113,14 @@ class ProductClass(QMainWindow):
         except sqlite3.Error as e:
             QMessageBox.critical(self, "Database Error", str(e))
 
-    def insert_movies_by_first_class(self):
+    def insert_products_by_first_class(self):
         self.insert_window = InsertWindow(self)
         self.insert_window.show()
 
     def loadTable(self, db_filename):
         self.connection = sqlite3.connect(db_filename)
         self.cursor = self.connection.cursor()
-        self.data = self.cursor.execute("SELECT id, name, price, quantity, category, pictures FROM test").fetchall()
+        self.data = self.cursor.execute("SELECT id, name, price, quantity, category, pictures, sale FROM test").fetchall()
 
         self.combo_box_category.addItem("Все")
         font = QFont("Times New Roman", 12)
@@ -148,25 +147,57 @@ class InsertWindow(QMainWindow):
         super().__init__()
         self.parent = parent
         uic.loadUi('insert_rows.ui', self)
-        self.insert_button.clicked.connect(self.insert_movies)
+        self.insert_button.clicked.connect(self.insert_products)
 
-    def insert_movies(self):
+    def insert_products(self):
         get_text_name = self.name_plain_text_edit.toPlainText()
         get_text_price = self.price_plain_text_edit.toPlainText()
         get_text_quantity = self.quantity_plaint_text_edit.toPlainText()
         get_text_category = self.category_plain_text_edit.toPlainText()
         get_text_pictures = self.pictures_plain_text_edit.toPlainText()
+        get_text_sales = self.sales_plain_text_edit.toPlainText()
 
         try:
-            self.parent.cursor.execute(
-                "INSERT INTO test(name, price, quantity, category, pictures) VALUES (?, ?, ?, ?, ?)",
-                (get_text_name, get_text_price, get_text_quantity, get_text_category, get_text_pictures)
-            )
+            # Проверка, что все поля заполнены
+            if not all([get_text_name, get_text_price, get_text_quantity, get_text_category, get_text_pictures,
+                        get_text_sales]):
+                raise ValueError("Все поля должны быть заполнены")
+
+            # Проверка, что цена и количество являются числами
+            if not get_text_price.isdigit() or not get_text_quantity.isdigit():
+                raise ValueError("Цена и количество должны быть числом")
+
+            # Проверка, что скидка - число в диапазоне от 0 до 100
+            if not get_text_sales.isdigit() or not (0 <= int(get_text_sales) <= 100):
+                raise ValueError("Скидка должна быть числом от 0 до 100")
+
+            # Проверка наличия товара с такими же параметрами (без учета поля sale)
+            query = ("SELECT id, quantity FROM test WHERE name = ? AND price = ? AND category = ? AND pictures = ?")
+            self.parent.cursor.execute(query, (get_text_name, get_text_price, get_text_category, get_text_pictures))
+            result = self.parent.cursor.fetchone()
+
+            if result:
+                # Товар уже существует, обновляем количество и скидку
+                item_id, current_quantity = result
+                new_quantity = int(current_quantity) + int(get_text_quantity)
+                update_query = "UPDATE test SET quantity = ?, sale = ? WHERE id = ?"
+                self.parent.cursor.execute(update_query, (new_quantity, get_text_sales, item_id))
+            else:
+                # Товара нет, вставляем новую строку
+                insert_query = (
+                    "INSERT INTO test(name, price, quantity, category, pictures, sale) VALUES (?, ?, ?, ?, ?, ?)")
+                self.parent.cursor.execute(insert_query, (
+                get_text_name, get_text_price, get_text_quantity, get_text_category, get_text_pictures, get_text_sales))
+
             self.parent.connection.commit()
             self.parent.loadTable(self.parent.db_filename)
             self.close()
+        except ValueError as e:
+            QMessageBox.critical(self, "Value Error", str(e))
         except sqlite3.Error as e:
             QMessageBox.critical(self, "Database Error", str(e))
+        except Exception as e:
+            QMessageBox.critical(self, "Unexpected Error", str(e))
 
 
 if __name__ == '__main__':
