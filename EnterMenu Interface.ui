@@ -35,7 +35,7 @@
      </font>
     </property>
     <property name="text">
-     <string>Artemivashenko05</string>
+     <string/>
     </property>
    </widget>
    <widget class="QLineEdit" name="password_lineEdit">
@@ -53,7 +53,7 @@
      </font>
     </property>
     <property name="text">
-     <string>Artemivashenko05</string>
+     <string/>
     </property>
    </widget>
    <widget class="QLabel" name="label">
