@@ -3,13 +3,13 @@ from PyQt5.QtWidgets import QApplication, QHBoxLayout, QTableWidget, QWidget, QT
     QPushButton, QFileDialog, QComboBox, QPlainTextEdit, QMessageBox, QLabel, QFrame,  QGridLayout, QButtonGroup, \
     QVBoxLayout, QScrollArea, QAbstractItemView, QHeaderView
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor, QPixmap, QFont
+from PyQt5.QtGui import QCloseEvent, QColor, QPixmap, QFont
 from PyQt5 import uic, sip
 from PyQt5.QtCore import Qt
 import sqlite3
 from math import ceil
 
-class UserInterface(QMainWindow):
+class UserInterfaceClass(QMainWindow):
 
     #Use for transform to dictionary
     def touple_to_dict(self, touple, dict): 
@@ -21,7 +21,7 @@ class UserInterface(QMainWindow):
             dict[name] = [price, quantity]
 
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__()
 
         self.fileOpen_1 = "UserInterfaceList.ui"
@@ -30,13 +30,14 @@ class UserInterface(QMainWindow):
         self.is_sale_indicator = 0
         self.need_sale_indicator = 0
         self.indicator = None
+        self.parent = parent
 
         self.back_background = QLabel(self)
         self.back_background.setGeometry(0, -85, 1300, 1100)
         self.SetImage(self.back_background, 'icons//background.jpg', 2000, 1150)
         self.back_background.setStyleSheet("background-image: url(icons//backgound.jpg);")
 
-        x = -300
+        x = 0
 
         self.title = QLabel("Key Food Marketplace", self)
         self.title.setGeometry(x, 0, 1500 - x, 70)
@@ -46,13 +47,22 @@ class UserInterface(QMainWindow):
         font = QFont("times new roman", 30, QFont.Bold)
         self.title.setFont(font)
 
-        self.setFixedSize(1500, 800)
+        self.setFixedSize(1300, 800)
 
         self.title.setStyleSheet("color: white; background-color: #0E294B;")
 
         self.image_label_cart = QLabel(self)
         self.image_label_cart.setGeometry(-30, -65, 200, 200)
         self.SetImage(self.image_label_cart, 'icons//cart.png', 150, 150)
+
+        self.connection = sqlite3.connect(self.table_name)
+        self.cur = self.connection.cursor()
+
+        uic.loadUi(self.fileOpen_1, self)
+        self.category_comboBox.addItem("Все")
+        categories = sorted(self.cur.execute("""SELECT name FROM category"""))
+        for i in categories:
+            self.category_comboBox.addItem(i[0])
 
         self.LoadUI()
 
@@ -61,6 +71,10 @@ class UserInterface(QMainWindow):
         self.filter_pushButton.clicked.connect(self.clickedFilterBut)
         self.product_buttons.buttonClicked.connect(self.clickedBut)
         self.sale_pushButton.clicked.connect(self.clickedSaleBut)
+        
+
+    def closeEvent(self, event) :
+        sys.exit()
 
 
     def SetImage(self, label, path, width, height):
@@ -68,15 +82,6 @@ class UserInterface(QMainWindow):
         scaled_pixmap = pixmap.scaled(width, height, aspectRatioMode=Qt.KeepAspectRatio)
         label.setPixmap(scaled_pixmap)
         label.setStyleSheet("background-color: transparent;")
-
-        self.connection = sqlite3.connect(self.table_name)
-        self.cur = self.connection.cursor()
-
-        uic.loadUi(self.fileOpen_1,self)
-        self.category_comboBox.addItem("Все")
-        categories = sorted(self.cur.execute("""SELECT name FROM category"""))
-        for i in categories:
-            self.category_comboBox.addItem(i[0])
 
 
     def LoadUI(self):
@@ -277,10 +282,12 @@ class UserInterface(QMainWindow):
                     self.deleteLayout(item.layout())
             sip.delete(layout)
 
+
     def clickedSaleBut(self):
         
         self.is_sale_indicator = 0 if self.is_sale_indicator else 1
         self.clickedFilterBut()
+
 
     def clickedDeleteBut(self):
 
@@ -394,9 +401,17 @@ class MyWindow(QMainWindow):
 
 
 
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    ex = UserInterfaceClass(None)
+    ex.show()
+    sys.exit(app.exec_())
+
+'''
 app = QApplication(sys.argv)
-ex = UserInterface()
+ex = UserInterfaceClass()
 window = MyWindow()
 window.setCentralWidget(ex)
 window.show()
 sys.exit(app.exec_())
+'''
