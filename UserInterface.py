@@ -13,8 +13,12 @@ class UserInterface(QMainWindow):
 
     #Use for transform to dictionary
     def touple_to_dict(self, touple, dict): 
-        name, price, quantity = touple[0], touple[1], touple[2]
-        dict[name] = [price, quantity]
+        try:
+            name, price, quantity, sale = touple[0], touple[1], touple[2], touple[3]
+            dict[name] = [price, quantity, sale]
+        except Exception:
+            name, price, quantity = touple[0], touple[1], touple[2]
+            dict[name] = [price, quantity]
 
 
     def __init__(self):
@@ -23,6 +27,8 @@ class UserInterface(QMainWindow):
         self.fileOpen_1 = "UserInterfaceList.ui"
         self.table_name = "test.db"
         self.bill_name = "Current_Bill.bd"
+        self.is_sale_indicator = 0
+        self.need_sale_indicator = 0
         self.indicator = None
 
         self.back_background = QLabel(self)
@@ -54,6 +60,7 @@ class UserInterface(QMainWindow):
         self.delete_pushButton.clicked.connect(self.clickedDeleteBut)
         self.filter_pushButton.clicked.connect(self.clickedFilterBut)
         self.product_buttons.buttonClicked.connect(self.clickedBut)
+        self.sale_pushButton.clicked.connect(self.clickedSaleBut)
 
 
     def SetImage(self, label, path, width, height):
@@ -77,16 +84,23 @@ class UserInterface(QMainWindow):
         #self.setFixedSize(1200, 800)
         category_text_from_box = self.category_comboBox.currentText()
 
+        #Check sale conditin, so this condition filter products that have sale
+        if category_text_from_box == "Все":
+            sale_condition = "WHERE sale > 0" if self.is_sale_indicator == 1 else ""
+        else:
+            sale_condition = ("AND sale > 0") if self.is_sale_indicator == 1 else ""
+
 
         #Create dict for data from db and Supply paths for pictures
         #The product category is taken into account
+        #The sale codition is taken into account
         if category_text_from_box == "Все":
-            self.data_1 = self.cur.execute("""SELECT name, price, quantity FROM test""")
+            self.data_1 = self.cur.execute(f"""SELECT name, price, quantity, sale FROM test {sale_condition}""")
             self.data = dict()
             for row in self.data_1:
                 self.touple_to_dict(row, self.data)
 
-            self.data_names_bdinfo = self.cur.execute("""SELECT pictures FROM test""")
+            self.data_names_bdinfo = self.cur.execute(f"""SELECT pictures FROM test {sale_condition}""")
         
         else:
             current_category_for_filter = self.cur.execute(f"""SELECT id FROM category 
@@ -94,14 +108,14 @@ class UserInterface(QMainWindow):
             for i in current_category_for_filter:
                 current_category_id_for_filter = i[0]
 
-            self.data_1 = self.cur.execute(f"""SELECT name, price, quantity FROM test
-                                                WHERE (category = '{current_category_id_for_filter}') """)
+            self.data_1 = self.cur.execute(f"""SELECT name, price, quantity, sale FROM test
+                                                WHERE (category = '{current_category_id_for_filter}') {sale_condition}""")
             self.data = dict()
             for row in self.data_1:
                 self.touple_to_dict(row, self.data)
 
             self.data_names_bdinfo = self.cur.execute(f"""SELECT pictures FROM test
-                                                            WHERE (category = '{current_category_id_for_filter}')""")
+                                                            WHERE (category = '{current_category_id_for_filter}') {sale_condition}""")
             
         self.data_names = []
         i = 0
@@ -116,11 +130,13 @@ class UserInterface(QMainWindow):
         self.product_buttons = QButtonGroup(self)
 
         positions = [(i,j) for i in range(int(ceil(len(self.data.keys())/5))) for j in range(5)]   
+        array_of_ru_names = list(self.data.values())
         count = 0
         
         for position, name in zip(positions, self.data_names):
-
+            
             verBox = QVBoxLayout()
+
             label1 = QLabel()
             label1.setFixedHeight(150)
 
@@ -148,8 +164,18 @@ class UserInterface(QMainWindow):
             self.product_buttons.setId(self.button, count)
 
             verBox.addWidget(self.button)
+
+            price_label = QLabel()
+            price_label.setText(f'{array_of_ru_names[count][0] - array_of_ru_names[count][0] * array_of_ru_names[count][2] / 100}')
+            price_label.setFont(QFont("times new roman", 14))
+            if array_of_ru_names[count][2]:
+                price_label.setStyleSheet('color : green')
+            price_label.setAlignment(Qt.AlignCenter)
+            verBox.addWidget(price_label)
+
             self.layout_scroll.addLayout(verBox, *position)
             count += 1
+
 
         #Add layout on the scrollArea
         self.frame = QFrame()
@@ -162,8 +188,6 @@ class UserInterface(QMainWindow):
         self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels(self.table_headers)
         self.table.resizeColumnsToContents()
-
-        self.summary_label.setText(self.summary_label.text() + ":  0")
         
 
     def FormTable(self):
@@ -217,7 +241,7 @@ class UserInterface(QMainWindow):
                 mes = QMessageBox.information(self, "Предупреждение", "Достигнуто максимальное количесвто товара в корзине")
 
         else:
-            bill_cur.execute(f"""INSERT INTO Current_Bill VALUES ('{local_id}', '{int(self.data[local_id][0])}', 
+            bill_cur.execute(f"""INSERT INTO Current_Bill VALUES ('{local_id}', '{int(self.data[local_id][0]) -  int(self.data[local_id][0])* int(self.data[local_id][2]) / 100}', 
                              '{int(self.data[local_id][1])}', '{int(1)}') """)
             bill_connection.commit()
 
@@ -253,6 +277,10 @@ class UserInterface(QMainWindow):
                     self.deleteLayout(item.layout())
             sip.delete(layout)
 
+    def clickedSaleBut(self):
+        
+        self.is_sale_indicator = 0 if self.is_sale_indicator else 1
+        self.clickedFilterBut()
 
     def clickedDeleteBut(self):
 
