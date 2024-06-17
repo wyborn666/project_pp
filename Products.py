@@ -42,6 +42,7 @@ class ProductClass(QMainWindow):
         name_text = self.line_edit_name.text()
         quantity_text = self.line_edit_quantity.text()
 
+        # Setting default values if fields are empty
         price_from = get_text_line_edit_price_from if get_text_line_edit_price_from else "0"
         price_to = get_text_line_edit_price_to if get_text_line_edit_price_to else "2000"
         quantity = quantity_text if quantity_text else "1"
@@ -50,6 +51,7 @@ class ProductClass(QMainWindow):
                             f"AND quantity >= {quantity} "
                             f"AND name LIKE '%{name_text}%'")
 
+        # If not "All" is selected, add a condition by category
         if filter_value != 'Все':
             get_id = self.cursor.execute(f"SELECT id FROM category WHERE name = '{filter_value}'").fetchone()
             if get_id:
@@ -103,10 +105,6 @@ class ProductClass(QMainWindow):
         id = self.table.item(row, 0).text()
         text = self.table.item(row, column).text()
 
-        # Check for text columns and wrap in quotes
-        if self.goods[column] in ["name", "category", "pictures"]:
-            text = f"'{text}'"
-
         try:
             self.cursor.execute(f"UPDATE test SET {self.goods[column]} = {text} WHERE id = {id}")
             self.connection.commit()
@@ -158,32 +156,32 @@ class InsertWindow(QMainWindow):
         get_text_sales = self.sales_plain_text_edit.toPlainText()
 
         try:
-            # Проверка, что все поля заполнены
+            # Checking that all fields are filled in
             if not all([get_text_name, get_text_price, get_text_quantity, get_text_category, get_text_pictures,
                         get_text_sales]):
                 raise ValueError("Все поля должны быть заполнены")
 
-            # Проверка, что цена и количество являются числами
+            # Checking that the price and quantity are numbers
             if not get_text_price.isdigit() or not get_text_quantity.isdigit():
                 raise ValueError("Цена и количество должны быть числом")
 
-            # Проверка, что скидка - число в диапазоне от 0 до 100
+            # Checking that the discount is a number in the range from 0 to 100
             if not get_text_sales.isdigit() or not (0 <= int(get_text_sales) <= 100):
                 raise ValueError("Скидка должна быть числом от 0 до 100")
 
-            # Проверка наличия товара с такими же параметрами (без учета поля sale)
+            # Checking the availability of goods with the same parameters (excluding the sale field)
             query = ("SELECT id, quantity FROM test WHERE name = ? AND price = ? AND category = ? AND pictures = ?")
             self.parent.cursor.execute(query, (get_text_name, get_text_price, get_text_category, get_text_pictures))
             result = self.parent.cursor.fetchone()
 
             if result:
-                # Товар уже существует, обновляем количество и скидку
+                # The product already exists, we update the quantity and discount
                 item_id, current_quantity = result
                 new_quantity = int(current_quantity) + int(get_text_quantity)
                 update_query = "UPDATE test SET quantity = ?, sale = ? WHERE id = ?"
                 self.parent.cursor.execute(update_query, (new_quantity, get_text_sales, item_id))
             else:
-                # Товара нет, вставляем новую строку
+                # There is no product, insert a new line
                 insert_query = (
                     "INSERT INTO test(name, price, quantity, category, pictures, sale) VALUES (?, ?, ?, ?, ?, ?)")
                 self.parent.cursor.execute(insert_query, (
