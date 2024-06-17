@@ -21,6 +21,7 @@ class UserInterfaceClass(QMainWindow):
     def __init__(self, parent):
         super().__init__()
 
+        #ui files, general_variables
         self.fileOpen_1 = "ui_files//UserInterfaceList.ui"
         self.table_name = "test.db"
         self.bill_name = "Current_Bill.bd"
@@ -36,6 +37,7 @@ class UserInterfaceClass(QMainWindow):
 
         x = 0
 
+        #design user_interface
         self.title = QLabel("Key Food Marketplace", self)
         self.title.setGeometry(x, 0, 1500 - x, 70)
         self.title.setAlignment(Qt.AlignCenter)
@@ -56,6 +58,8 @@ class UserInterfaceClass(QMainWindow):
         self.cur = self.connection.cursor()
 
         uic.loadUi(self.fileOpen_1, self)
+
+        #add categories to comboBox
         self.category_comboBox.addItem("Все")
         categories = sorted(self.cur.execute("""SELECT name FROM category"""))
         for i in categories:
@@ -69,7 +73,7 @@ class UserInterfaceClass(QMainWindow):
         self.product_buttons.buttonClicked.connect(self.clickedBut)
         self.sale_pushButton.clicked.connect(self.clickedSaleBut)
         
-
+    #close event for all windows
     def closeEvent(self, event) :
         sys.exit()
 
@@ -167,6 +171,7 @@ class UserInterfaceClass(QMainWindow):
 
             verBox.addWidget(self.button)
 
+            #add price in one item, change price
             price_label = QLabel()
             price_label.setText(f'{array_of_ru_names[count][0] - array_of_ru_names[count][0] * array_of_ru_names[count][2] / 100}')
             price_label.setFont(QFont("times new roman", 14))
@@ -191,7 +196,7 @@ class UserInterfaceClass(QMainWindow):
         self.table.setHorizontalHeaderLabels(self.table_headers)
         self.table.resizeColumnsToContents()
         
-
+    #function for formation of table
     def FormTable(self):
 
         bill_connection = sqlite3.connect(self.bill_name)
@@ -219,7 +224,7 @@ class UserInterfaceClass(QMainWindow):
 
         self.summary_label.setText(f"Итого: {total_sum}")
 
-
+    #press the button
     def clickedBut(self, button_or):
 
         bill_connection = sqlite3.connect(self.bill_name)
@@ -250,7 +255,7 @@ class UserInterfaceClass(QMainWindow):
         #Form the bill
         self.FormTable()
 
-
+    #"Купить"
     def clickedSelectBut(self):
         
         bill_conn = sqlite3.connect(self.bill_name)
@@ -258,6 +263,7 @@ class UserInterfaceClass(QMainWindow):
 
         current_count_bill = bill_curs.execute("""SELECT count(*) FROM (select 1 from 'Current_Bill' limit 1)""").fetchall()[0][0]
 
+        #if bucket is empty
         if current_count_bill == 0:
             message = QMessageBox.information(self, "Предупреждение", "Ваша корзина пуста")
 
@@ -276,7 +282,7 @@ class UserInterfaceClass(QMainWindow):
         self.LoadUI()
         self.product_buttons.buttonClicked.connect(self.clickedBut)
 
-
+    #function for delete a layout
     def deleteLayout(self, layout):
         if layout is not None:
             while layout.count():
@@ -332,7 +338,7 @@ class BuketWindow(QMainWindow):
         self.buy_pushButton.clicked.connect(self.clickedBuyBut)
 
 
-    def load_text(self):
+    def loadText(self):
         
         self.setFixedSize(450, 450)
 
@@ -348,6 +354,7 @@ class BuketWindow(QMainWindow):
         self.bill_layout = QVBoxLayout()
         font = QFont("times new roman", 12, QFont.Bold)
 
+        #form the bill
         Sum = 0
         for i, key in enumerate(bill_dict.keys()):
             
@@ -405,6 +412,8 @@ class BuketWindow(QMainWindow):
         end = end = QMessageBox.question(self, "Окно", "Покупка совершена. Хотите покинуть магазин?", QMessageBox.Yes | QMessageBox.No)
         data_for_delete = self.bill_cur.execute(f"""SELECT Name, Amount FROM Current_Bill""")
 
+        #leave the market
+        #just delete from db and exit
         if end == QMessageBox.Yes:
             
             for name, quantity in data_for_delete:
@@ -417,6 +426,7 @@ class BuketWindow(QMainWindow):
             self.bill_connection.commit()
             sys.exit(app.exec_())
 
+        #stay at market
         else:
 
             for name, quantity in data_for_delete:
