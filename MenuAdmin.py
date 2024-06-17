@@ -45,7 +45,7 @@ class MyWidget(QMainWindow):
 
         self.image_label_emblem = QLabel(self)
         self.image_label_emblem.setGeometry(0, 50, 225, 200)
-        self.SetImage(self.image_label_emblem, 'icons//emblem_shop.png', 220, 300)
+        self.SetImage(self.image_label_emblem, 'emblem_shop.png', 220, 300)
 
         Interface = QFrame(self)
         Interface.setFrameShape(QFrame.StyledPanel)

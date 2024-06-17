@@ -48,7 +48,7 @@ class EnterMenu(QMainWindow):
 
         self.label = self.findChild(QLabel, 'label')
 
-        self.label.setText('<a style="color: #0864C5;" href="#">Register</a>')
+        self.label.setText('<a style="color: #0864C5;" href="#">Зарегистрироваться</a>')
         self.label.setTextFormat(Qt.RichText)
         self.label.setOpenExternalLinks(False)
 
@@ -57,7 +57,7 @@ class EnterMenu(QMainWindow):
                 font-size: 18px;
             }
         """)
-        self.label.setGeometry(245, 257, 300, 50)
+        self.label.setGeometry(200, 257, 300, 50)
 
         self.enter_pushButton.setStyleSheet("""
             QPushButton {

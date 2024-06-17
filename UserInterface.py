@@ -427,6 +427,12 @@ class BuketWindow(QMainWindow):
                 
             self.bill_cur.execute("""DELETE FROM Current_Bill""")
             self.bill_connection.commit()
+            self.parent.table.clear()
+            self.parent.table.setRowCount(0)
+
+            self.parent.table.setColumnCount(len(self.parent.table_headers))
+            self.parent.table.setHorizontalHeaderLabels(self.parent.table_headers)
+            self.parent.summary_label.setText(f"Итого: {0}")
             self.close()
 
 
