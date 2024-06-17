@@ -121,7 +121,6 @@ class MyWidget(QMainWindow):
         except Exception as e:
             print(f"Error opening products window: {e}")
 
-    @pyqtSlot()
     def on_products_window_closed(self):
         self.loadTable(self.db_filename)
 
