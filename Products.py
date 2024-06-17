@@ -119,7 +119,7 @@ class ProductClass(QMainWindow):
         self.connection = sqlite3.connect(db_filename)
         self.cursor = self.connection.cursor()
         self.data = self.cursor.execute("SELECT id, name, price, quantity, category, pictures, sale FROM test").fetchall()
-
+        self.combo_box_category.clear()
         self.combo_box_category.addItem("Все")
         font = QFont("Times New Roman", 12)
         self.combo_box_category.setFont(font)
