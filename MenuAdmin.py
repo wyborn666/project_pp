@@ -97,6 +97,7 @@ class MyWidget(QMainWindow):
             for i, row in enumerate(self.data):
                 for j, elem in enumerate(row):
                     item = QTableWidgetItem(str(elem))
+                    item.setFlags(item.flags() & ~Qt.ItemIsEditable)
                     self.table.setItem(i, j, item)
 
             for col in range(len(self.data[0])):
