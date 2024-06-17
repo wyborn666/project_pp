@@ -92,7 +92,7 @@ class UserInterfaceClass(QMainWindow):
 
         #Check sale conditin, so this condition filter products that have sale
         if category_text_from_box == "Все":
-            sale_condition = "WHERE sale > 0" if self.is_sale_indicator == 1 else ""
+            sale_condition = "AND (sale > 0)" if self.is_sale_indicator == 1 else ""
         else:
             sale_condition = ("AND sale > 0") if self.is_sale_indicator == 1 else ""
 
@@ -101,12 +101,12 @@ class UserInterfaceClass(QMainWindow):
         #The product category is taken into account
         #The sale codition is taken into account
         if category_text_from_box == "Все":
-            self.data_1 = self.cur.execute(f"""SELECT name, price, quantity, sale FROM test {sale_condition}""")
+            self.data_1 = self.cur.execute(f"""SELECT name, price, quantity, sale FROM test WHERE (quantity > 0) {sale_condition}""")
             self.data = dict()
             for row in self.data_1:
                 self.touple_to_dict(row, self.data)
 
-            self.data_names_bdinfo = self.cur.execute(f"""SELECT pictures FROM test {sale_condition}""")
+            self.data_names_bdinfo = self.cur.execute(f"""SELECT pictures FROM test WHERE (quantity > 0) {sale_condition}""")
         
         else:
             current_category_for_filter = self.cur.execute(f"""SELECT id FROM category 
@@ -115,13 +115,13 @@ class UserInterfaceClass(QMainWindow):
                 current_category_id_for_filter = i[0]
 
             self.data_1 = self.cur.execute(f"""SELECT name, price, quantity, sale FROM test
-                                                WHERE (category = '{current_category_id_for_filter}') {sale_condition}""")
+                                                WHERE (quantity > 0) AND (category = '{current_category_id_for_filter}') {sale_condition}""")
             self.data = dict()
             for row in self.data_1:
                 self.touple_to_dict(row, self.data)
 
             self.data_names_bdinfo = self.cur.execute(f"""SELECT pictures FROM test
-                                                            WHERE (category = '{current_category_id_for_filter}') {sale_condition}""")
+                                                            WHERE (quantity > 0) AND (category = '{current_category_id_for_filter}') {sale_condition}""")
             
         self.data_names = []
         i = 0
@@ -333,7 +333,7 @@ class BuketWindow(QMainWindow):
         uic.loadUi(self.bucket_window_name, self)
 
 
-        self.load_text()
+        self.loadText()
         self.return_pushButton.clicked.connect(self.clickedReturnBut)
         self.buy_pushButton.clicked.connect(self.clickedBuyBut)
 
@@ -434,7 +434,7 @@ class BuketWindow(QMainWindow):
                 main_bd_cursor.execute(f"""UPDATE test 
                                             SET quantity = quantity - '{quantity}'
                                             WHERE (name = '{name}')""")
-                
+            main_bd_con.commit()
             self.bill_cur.execute("""DELETE FROM Current_Bill""")
             self.bill_connection.commit()
             self.parent.table.clear()
@@ -443,6 +443,7 @@ class BuketWindow(QMainWindow):
             self.parent.table.setColumnCount(len(self.parent.table_headers))
             self.parent.table.setHorizontalHeaderLabels(self.parent.table_headers)
             self.parent.summary_label.setText(f"Итого: {0}")
+            self.parent.LoadUI()
             self.close()
 
 
