@@ -12,7 +12,7 @@ class MyWidget(QMainWindow):
     def __init__(self, db_filename):
         super().__init__()
         self.fileOpen = ""
-        uic.loadUi('menu_admin.ui', self)
+        uic.loadUi('ui_files//menu_admin.ui', self)
         self.db_filename = db_filename
         self.LoadUI()
 

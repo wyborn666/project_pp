@@ -21,7 +21,7 @@ class UserInterfaceClass(QMainWindow):
     def __init__(self, parent):
         super().__init__()
 
-        self.fileOpen_1 = "UserInterfaceList.ui"
+        self.fileOpen_1 = "ui_files//UserInterfaceList.ui"
         self.table_name = "test.db"
         self.bill_name = "Current_Bill.bd"
         self.is_sale_indicator = 0
@@ -320,7 +320,7 @@ class BuketWindow(QMainWindow):
     def __init__(self, parent : QWidget):
         super().__init__()
         self.parent = parent
-        self.bucket_window_name = "BucketWindow.ui"
+        self.bucket_window_name = "ui_files//BucketWindow.ui"
 
         self.bill_connection = sqlite3.connect(self.parent.bill_name)
         self.bill_cur = self.bill_connection.cursor()

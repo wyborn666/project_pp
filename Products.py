@@ -11,7 +11,7 @@ class ProductClass(QMainWindow):
     def __init__(self, parent, db_filename):
         super().__init__()
         self.parent = parent
-        uic.loadUi('products.ui', self)
+        uic.loadUi('ui_files//products.ui', self)
         self.db_filename = db_filename
         self.LoadUI()
 
@@ -146,7 +146,7 @@ class InsertWindow(QMainWindow):
     def __init__(self, parent: ProductClass):
         super().__init__()
         self.parent = parent
-        uic.loadUi('insert_rows.ui', self)
+        uic.loadUi('ui_files//insert_rows.ui', self)
         self.insert_button.clicked.connect(self.insert_products)
 
     def insert_products(self):

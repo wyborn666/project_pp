@@ -12,7 +12,7 @@ class EnterMenu(QMainWindow):
     def __init__(self):
         super().__init__()
         self.register_window = None
-        self.enter_interface_name = "EnterMenu Interface.ui"
+        self.enter_interface_name = "ui_files//EnterMenu Interface.ui"
         self.users_table_name = "Users_Admins.bd"
         self.indicator_reg = None
         self.conn = sqlite3.connect(self.users_table_name)
