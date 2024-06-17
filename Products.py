@@ -105,6 +105,8 @@ class ProductClass(QMainWindow):
         id = self.table.item(row, 0).text()
         text = self.table.item(row, column).text()
 
+        if self.goods[column] in ["name", "category", "pictures"]:    text = f"'{text}'"
+
         try:
             self.cursor.execute(f"UPDATE test SET {self.goods[column]} = {text} WHERE id = {id}")
             self.connection.commit()
